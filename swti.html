@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>北航游泳社 SWTI 人格测试</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f1923;color:#e6e9ec;padding:20px;max-width:600px;margin:0 auto;line-height:1.5}
+.card{background:#1b2735;border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+h1{color:#4cc2ff;font-size:22px;margin-top:0;margin-bottom:16px;line-height:1.3}
+.question{margin:24px 0;padding-bottom:20px;border-bottom:1px solid #273747}
+.question:last-child{border-bottom:none}
+.option{background:#273747;border-radius:8px;padding:14px;margin:10px 0;cursor:pointer;transition:background 0.2s ease}
+.option:hover{background:#334557}
+.option.selected{background:#2a5c7a;outline:2px solid #4cc2ff}
+.btn{background:#4cc2ff;color:#0f1923;border:none;border-radius:8px;padding:14px 24px;font-size:16px;width:100%;font-weight:bold;cursor:pointer;transition:opacity 0.2s ease;margin-top:12px}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+.btn.reset{background:#334557;color:#e6e9ec;margin-top:20px}
+.result{display:none}
+.res-title{font-size:20px;color:#4cc2ff;margin-bottom:12px;font-weight:bold}
+.res-desc{line-height:1.7;margin-top:12px;color:#d1d7dc}
+.tag{display:inline-block;background:#334557;padding:6px 12px;border-radius:99px;margin-right:8px;margin-bottom:8px;font-size:14px;color:#b8c2cc}
+.tips{font-size:14px;color:#8a95a1;margin:12px 0;padding:10px;background:#273747;border-radius:8px}
+.footer-text{margin-top:24px;font-size:14px;color:#aaa;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>北航游泳社 SWTI 游泳人格测试</h1>
+<p class="tips">请完成所有8道题目，测出你的专属泳池人格，到摊位即可盖章抽奖～</p>
+
+<div id="quiz"></div>
+<button class="btn" id="resultBtn" onclick="calculate()" disabled>查看我的游泳人格</button>
+</div>
+
+<div class="card result" id="result">
+<div class="res-title" id="typeName"></div>
+<div id="tags"></div>
+<div class="res-desc" id="desc"></div>
+<p class="footer-text">
+到百团大战游泳社摊位，出示本结果即可集章抽奖<br>
+我们在操场等你 🏊‍♂️🏊‍♀️
+</p>
+<button class="btn reset" onclick="resetTest()">重新测试</button>
+</div>
+
+<script>
+const questions = [
+  {
+    text:"1. 到泳池后你更习惯？",
+    options:[
+      {text:"和朋友一起，边游边聊", type:"S"},
+      {text:"找空泳道自己安静游", type:""},
+      {text:"看别人游得怎么样", type:"T"},
+      {text:"犹豫半天再慢慢下水", type:""}
+    ]
+  },
+  {
+    text:"2. 下水方式你更像？",
+    options:[
+      {text:"直接跳，爽快就完", type:"P"},
+      {text:"先试水，适应水温", type:""},
+      {text:"摆个帅气姿势再下", type:"P"},
+      {text:"热身充分再动", type:""}
+    ]
+  },
+  {
+    text:"3. 有人超过你时，你会？",
+    options:[
+      {text:"无所谓，继续漂", type:""},
+      {text:"悄悄加速反超", type:"A"},
+      {text:"看一眼他的姿势", type:"T"},
+      {text:"吓一跳乱节奏", type:""}
+    ]
+  },
+  {
+    text:"4. 游泳时你更在意？",
+    options:[
+      {text:"动作标不标准", type:"T"},
+      {text:"快不快、能不能赢", type:"A"},
+      {text:"轻不轻松、愉不愉快", type:""},
+      {text:"会不会呛水、安全吗", type:""}
+    ]
+  },
+  {
+    text:"5. 游累了你的常态是？",
+    options:[
+      {text:"抓水线观察别人", type:"T"},
+      {text:"和旁边人聊天交友", type:"S"},
+      {text:"坚持游完计划圈数", type:"A"},
+      {text:"直接摆烂漂浮发呆", type:""}
+    ]
+  },
+  {
+    text:"6. 你更喜欢哪种状态？",
+    options:[
+      {text:"潜在水里不被打扰", type:""},
+      {text:"水花大一点更有感觉", type:"P"},
+      {text:"安安静静专注划水", type:""},
+      {text:"跟同伴互相鼓励", type:"S"}
+    ]
+  },
+  {
+    text:"7. 你对泳技的态度是？",
+    options:[
+      {text:"不断改进，越游越好", type:"A"},
+      {text:"懂很多理论，会点评", type:"T"},
+      {text:"会游就行，不追求专业", type:""},
+      {text:"装备齐全才有仪式感", type:""}
+    ]
+  },
+  {
+    text:"8. 社团活动你更倾向？",
+    options:[
+      {text:"一起训练，共同进步", type:"A"},
+      {text:"组织游戏，热闹好玩", type:"S"},
+      {text:"岸上指导，技术输出", type:"T"},
+      {text:"大胆整活，显眼就完", type:"P"}
+    ]
+  }
+];
+
+const types = [
+  {
+    name:"赛道卷王",
+    tags:["A最高","P高"],
+    desc:"一入水就自动开启竞赛模式，任何人超过你都会瞬间触发被动反冲技能。配速、心率、耐力全程在线，不夺回优势绝不罢休，是泳池里行走的速度机器，天生自带高成就动机，训练态度和比赛抗压能力都属于社团顶级水平。"
+  },
+  {
+    name:"水花喷射机",
+    tags:["A最高","T高"],
+    desc:"游起来自带局部降雨特效，动作大开大合，水花气势碾压整条泳道。爆发力突出、推进力充足，只是入水下压角度略猛，流线型稍弱，稍微调整技术细节就能立刻变身速度型狠人，气场和力量感拉满。"
+  },
+  {
+    name:"岸上理论家",
+    tags:["T最高","A高"],
+    desc:"从不下水，却能精准看穿全池的动作问题。抱水、转髋、推水、打腿，张口就是专业逻辑，对动作结构和空间姿态有极强洞察力。真要下水练习，动作内化速度会远超常人，属于理论点满、实战潜力爆表的技术型大脑。"
+  },
+  {
+    name:"泳道社交牛",
+    tags:["T最高","S高"],
+    desc:"游泳只是副业，社交才是主业。游25米能顺路聊三趟天，一条泳道游完直接收获半池好友。运动+社交的模式让你动力持久、心情稳定，是社团里出勤率最高、气氛最活跃、最容易长期坚持的快乐核心。"
+  },
+  {
+    name:"跳水显眼包",
+    tags:["S最高","P高"],
+    desc:"能跳绝不走，能炸水花绝不安静入水。全场目光自动向你聚焦，主打一个存在感拉满。身体协调性和空间感天生优秀，只是入水控制还没完全点亮，属于快乐至上、敢秀敢玩的泳池气氛炸弹。"
+  },
+  {
+    name:"养生慢游家",
+    tags:["S最高","T高"],
+    desc:"游速比走路还慢，姿态却比天鹅更稳更优雅。动作舒缓均匀，节奏松弛有度，把游泳直接练成水上冥想。低强度稳态划水对关节最友好，心肺温和提升，不易受伤、不易疲惫，是最适合长期养生的划水流派。"
+  },
+  {
+    name:"水下老六",
+    tags:["P最高","A高"],
+    desc:"常年潜伏水底，主打一个神出鬼没。爱潜泳、爱贴底、爱突然从别人身边冒头，主打意外效果。屏气能力和水下流线型控制天然优秀，对蹬壁、转身、潜泳出发这类细节动作有极高敏感度。"
+  },
+  {
+    name:"泳池喝水达人",
+    tags:["P最高","S高"],
+    desc:"游一趟、喝半池，呛水脸红是日常状态，但依旧坚持下水绝不退缩。呼吸节奏和头位控制还在修炼，节奏稳定性稍弱，但勇气和抗挫力拉满，一旦练熟换气节奏，游进稳定性会直接上一个台阶。"
+  },
+  {
+    name:"泳池摸鱼大师",
+    tags:["低A低T","低S低P"],
+    desc:"下水五分钟，漂浮半小时，游泳只为解压，划水只为放松。全程追求舒适区，心率稳定、情绪平和，几乎没有竞技压力，是泳池中心理状态最放松、精神内耗最少、划水体验最纯粹的摆烂大师。"
+  },
+  {
+    name:"浮板粘人精",
+    tags:["高S","低P"],
+    desc:"离开浮板瞬间失去安全感，抱着浮板能安安静静漂一下午。身体平衡感还在建立，打腿基础扎实稳健，属于慢热但稳步变强的成长型泳者，情绪稳定、焦虑感低，进步曲线顺滑又可靠。"
+  },
+  {
+    name:"孤泳者",
+    tags:["全低","S最低"],
+    desc:"一人一道，自带结界，下水即进入沉浸式划水状态。不社交、不闲聊、不围观，专注度拉满，对外界干扰完全免疫。长距离耐力表现稳定，动作节奏一致性强，是典型的专注自律型泳者。"
+  },
+  {
+    name:"怕水冷缩怪",
+    tags:["全低","P最低"],
+    desc:"站在池边能犹豫二十分钟，脚尖点水三次都要喊一次好冷。永远在适应水温，永远在做心理建设。体温调节更敏感，但热身充分后肌肉激活更完整，反而在游泳中最不容易抽筋，慢热但极度稳定。"
+  }
+];
+
+// 初始化题目
+const quiz = document.getElementById("quiz");
+const resultBtn = document.getElementById("resultBtn");
+const answers = Array(questions.length).fill(null);
+
+questions.forEach((q,i)=>{
+  const div = document.createElement("div");
+  div.className = "question";
+  div.innerHTML = `<p>${q.text}</p>`;
+  q.options.forEach((opt,j)=>{
+    const o = document.createElement("div");
+    o.className = "option";
+    o.dataset.type = opt.type;
+    o.innerText = opt.text;
+    o.onclick = ()=>select(i,j);
+    div.appendChild(o);
+  });
+  quiz.appendChild(div);
+});
+
+// 选择选项逻辑
+function select(qidx,oidx){
+  const opts = document.querySelectorAll(".question")[qidx].querySelectorAll(".option");
+  // 清除当前题目所有选中状态
+  opts.forEach(o=>o.classList.remove("selected"));
+  // 设置当前选中项
+  opts[oidx].classList.add("selected");
+  answers[qidx] = opts[oidx].dataset.type;
+  
+  // 检查是否所有题目都已选择
+  const allAnswered = answers.every(ans => ans !== null);
+  resultBtn.disabled = !allAnswered;
+}
+
+// 计算结果逻辑
+function calculate(){
+  // 统计得分
+  const score = {S:0,P:0,A:0,T:0};
+  answers.forEach(t=>{
+    if(t && score.hasOwnProperty(t)){
+      score[t]++;
+    }
+  });
+
+  // 排序得分
+  const arr = Object.entries(score).sort((a,b)=>b[1]-a[1]);
+  const first = arr[0][0];
+  const second = arr[1][0];
+  // 判定是否所有维度得分都≤2
+  const allLow = arr.every(([k,v])=>v<=2);
+
+  let typeIdx;
+  // 核心判定逻辑
+  if(first==="A"){
+    typeIdx = second==="P" ? 0 : 1;
+  }else if(first==="T"){
+    typeIdx = second==="A" ? 2 : 3;
+  }else if(first==="S"){
+    typeIdx = second==="P" ? 4 : 5;
+  }else if(first==="P"){
+    typeIdx = second==="A" ? 6 : 7;
+  }else if(allLow){
+    // 全低分时，判断S和P哪个更低
+    typeIdx = score.S <= score.P ? 10 : 11;
+  }else{
+    // 其他情况
+    typeIdx = (score.S<2 && score.P<2) ? 8 : 9;
+  }
+
+  // 展示结果
+  document.getElementById("quiz").style.display = "none";
+  resultBtn.style.display = "none";
+  document.getElementById("result").style.display = "block";
+  document.getElementById("typeName").innerText = types[typeIdx].name;
+  document.getElementById("desc").innerText = types[typeIdx].desc;
+  document.getElementById("tags").innerHTML = types[typeIdx].tags.map(t=>`<span class="tag">${t}</span>`).join("");
+}
+
+// 重新测试逻辑
+function resetTest(){
+  // 重置答案数组
+  answers.fill(null);
+  // 清除所有选中状态
+  document.querySelectorAll(".option").forEach(o=>o.classList.remove("selected"));
+  // 重置按钮状态
+  resultBtn.disabled = true;
+  // 显示题目，隐藏结果
+  document.getElementById("quiz").style.display = "block";
+  resultBtn.style.display = "block";
+  document.getElementById("result").style.display = "none";
+}
+</script>
+</body>
+</html>
